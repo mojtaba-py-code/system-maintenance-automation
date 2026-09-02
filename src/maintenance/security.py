@@ -18,6 +18,7 @@ about symlinks.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 from .config import SecurityConfig, expand_path
@@ -67,6 +68,23 @@ def _system_protected_roots() -> list[Path]:
     return roots
 
 
+def _scratch_exemptions() -> list[Path]:
+    """Scratch areas that sit *inside* a protected root but must stay cleanable.
+
+    macOS places every per-user temporary and cache directory under
+    ``/var/folders`` -- which ``resolve()`` turns into ``/private/var/folders``.
+    ``/var`` is protected as system state, so without this carve-out the guard
+    would classify the entire macOS temp/cache tree as untouchable, and the
+    single most valuable cleanup target on that platform would be refused.
+
+    Only *descendants* are exempted: ``/var/folders`` itself remains protected,
+    so the tree can be cleaned but never removed wholesale.
+    """
+    if sys.platform == "darwin":
+        return [Path("/var/folders")]
+    return []
+
+
 class PathGuard:
     """Validates paths before destructive or state-changing operations."""
 
@@ -75,6 +93,7 @@ class PathGuard:
         self._follow_symlinks = config.follow_symlinks
         self._protected = self._collect_protected(config)
         self._allowed_roots = [self._normalise(expand_path(p)) for p in config.allowed_roots]
+        self._scratch = [self._normalise(p) for p in _scratch_exemptions()]
 
     # -- construction helpers --------------------------------------------- #
     @staticmethod
@@ -131,6 +150,10 @@ class PathGuard:
         protect their descendants.
         """
         target = self._normalise(Path(path))
+        # A descendant of a scratch area is never system-protected, even though
+        # the scratch area itself lives under a protected root.
+        if any(scratch in target.parents for scratch in self._scratch):
+            return False
         for root in self._protected:
             if target == root:
                 return True

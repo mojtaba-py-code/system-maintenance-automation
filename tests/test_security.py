@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,26 @@ def test_system_roots_are_protected() -> None:
     guard = PathGuard(SecurityConfig())
     system_path = Path(os.environ.get("SystemRoot", "/etc")) if os.name == "nt" else Path("/etc")
     assert guard.is_protected(system_path)
+
+
+def test_os_scratch_area_is_not_protected(tmp_path: Path) -> None:
+    """Temp/scratch space must stay cleanable on every platform.
+
+    Regression test for macOS: ``tmp_path`` there lives under ``/var/folders``,
+    which ``resolve()`` expands to ``/private/var/folders``. Because ``/var`` is
+    a protected system root, the guard used to classify the whole macOS
+    temp/cache tree as untouchable and refuse every cleanup inside it.
+    """
+    guard = PathGuard(SecurityConfig())
+    assert guard.is_protected(tmp_path / "scratch.tmp") is False
+
+
+def test_scratch_root_itself_stays_protected() -> None:
+    """The carve-out exempts descendants only, never the scratch root."""
+    if sys.platform != "darwin":
+        pytest.skip("macOS-specific scratch root")
+    guard = PathGuard(SecurityConfig())
+    assert guard.is_protected(Path("/var/folders")) is True
 
 
 def test_user_protected_paths(tmp_path: Path) -> None:
