@@ -154,7 +154,7 @@ system-maintenance-automation/
 │   ├── health.py reports.py scheduler.py service.py cli.py
 │   ├── notifications/ # telegram / discord / slack / email
 │   └── web/           # FastAPI app + dashboard template
-├── tests/             # 243 tests (unit + integration + security)
+├── tests/             # 244 tests (unit + integration + security)
 ├── docs/              # architecture, configuration, CLI, troubleshooting, dev
 ├── logs/ reports/ backups/ database/   # runtime output (git-ignored)
 └── pyproject.toml
@@ -267,7 +267,7 @@ pytest --cov              # tests + coverage
 ```
 
 Quality gates on every change: **ruff** clean, **mypy** strict clean, **pytest**
-green (243 tests, ~86% coverage). See [docs/DEVELOPER.md](docs/DEVELOPER.md)
+green (244 tests, ~86% coverage). See [docs/DEVELOPER.md](docs/DEVELOPER.md)
 and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---

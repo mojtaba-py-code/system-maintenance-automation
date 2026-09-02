@@ -38,6 +38,22 @@ def test_scratch_root_itself_stays_protected() -> None:
     assert guard.is_protected(Path("/var/folders")) is True
 
 
+def test_user_protection_beats_scratch_exemption(tmp_path: Path) -> None:
+    """The scratch carve-out must never override an operator's own rule.
+
+    On macOS ``tmp_path`` sits under ``/var/folders``, which built-in system
+    protection exempts so the temp tree stays cleanable. A directory the
+    operator explicitly protected there must still be refused.
+    """
+    precious = tmp_path / "precious"
+    precious.mkdir()
+    guard = PathGuard(SecurityConfig(protected_paths=[str(precious)]))
+    assert guard.is_protected(precious) is True
+    assert guard.is_protected(precious / "inside.txt") is True
+    with pytest.raises(SecurityError):
+        guard.check_deletable(precious / "inside.txt")
+
+
 def test_user_protected_paths(tmp_path: Path) -> None:
     protected = tmp_path / "precious"
     protected.mkdir()

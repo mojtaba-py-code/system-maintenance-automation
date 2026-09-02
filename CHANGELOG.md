@@ -71,7 +71,7 @@ Initial release.
 ### Project
 - Cross-platform: Windows, Linux and macOS.
 - Python 3.10–3.12, verified in CI on all three operating systems.
-- 243 tests, ~86% coverage, `ruff` clean, `mypy` clean, `bandit` clean and
+- 244 tests, ~86% coverage, `ruff` clean, `mypy` clean, `bandit` clean and
   `pip-audit` reporting no known vulnerabilities.
 
 [1.0.0]: https://github.com/mojtaba-py-code/system-maintenance-automation/releases/tag/v1.0.0

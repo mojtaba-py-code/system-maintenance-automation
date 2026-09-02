@@ -91,7 +91,10 @@ class PathGuard:
     def __init__(self, config: SecurityConfig) -> None:
         self._config = config
         self._follow_symlinks = config.follow_symlinks
-        self._protected = self._collect_protected(config)
+        # Kept apart on purpose: the scratch carve-out below may relax *built-in*
+        # OS protection, but must never relax what the operator declared.
+        self._system_protected = [self._normalise(p) for p in _system_protected_roots()]
+        self._user_protected = [self._normalise(expand_path(p)) for p in config.protected_paths]
         self._allowed_roots = [self._normalise(expand_path(p)) for p in config.allowed_roots]
         self._scratch = [self._normalise(p) for p in _scratch_exemptions()]
 
@@ -109,10 +112,17 @@ class PathGuard:
         except (OSError, RuntimeError):  # pragma: no cover - defensive
             return path.expanduser().absolute()
 
-    def _collect_protected(self, config: SecurityConfig) -> list[Path]:
-        protected = list(_system_protected_roots())
-        protected.extend(expand_path(p) for p in config.protected_paths)
-        return [self._normalise(p) for p in protected]
+    @staticmethod
+    def _matches_root(target: Path, roots: list[Path]) -> bool:
+        """True if ``target`` equals, sits inside, or contains any of ``roots``."""
+        for root in roots:
+            if target == root:
+                return True
+            if target in root.parents:  # target contains (is an ancestor of) a root
+                return True
+            if not PathGuard._is_filesystem_anchor(root) and root in target.parents:
+                return True  # target lives inside a protected (non-anchor) root
+        return False
 
     # -- public API -------------------------------------------------------- #
     def resolve(self, path: str | os.PathLike[str]) -> Path:
@@ -148,20 +158,24 @@ class PathGuard:
         anything that *contains* it; it does not make every file on the volume
         protected. Named system directories (``/etc``, ``C:\\Windows`` ...) also
         protect their descendants.
+
+        Protection is two-tier. Paths declared in ``security.protected_paths``
+        are absolute and always win. Built-in OS protection follows the same
+        rule but yields inside the scratch areas listed by
+        :func:`_scratch_exemptions`, so a platform that puts its temp tree
+        under a system directory stays serviceable without loosening anything
+        the operator asked for.
         """
         target = self._normalise(Path(path))
-        # A descendant of a scratch area is never system-protected, even though
-        # the scratch area itself lives under a protected root.
+        # Operator-declared protections are absolute and are never exempted --
+        # a user who protects a directory inside a scratch area means it.
+        if self._matches_root(target, self._user_protected):
+            return True
+        # Built-in OS protection yields inside a scratch area, so that (for
+        # example) the macOS temp tree under /var/folders stays cleanable.
         if any(scratch in target.parents for scratch in self._scratch):
             return False
-        for root in self._protected:
-            if target == root:
-                return True
-            if target in root.parents:  # target contains (is an ancestor of) a root
-                return True
-            if not self._is_filesystem_anchor(root) and root in target.parents:
-                return True  # target lives inside a protected (non-anchor) root
-        return False
+        return self._matches_root(target, self._system_protected)
 
     def within_allowed_roots(self, path: str | os.PathLike[str]) -> bool:
         """True if no allow-list is configured, or ``path`` is inside one root."""
@@ -198,4 +212,4 @@ class PathGuard:
     @property
     def protected_roots(self) -> list[Path]:
         """A copy of the effective protected-root list (for diagnostics)."""
-        return list(self._protected)
+        return list(self._system_protected) + list(self._user_protected)
