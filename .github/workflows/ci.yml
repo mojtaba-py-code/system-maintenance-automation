@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  quality:
+    name: ${{ matrix.os }} · py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,web,notify]"
+
+      - name: Lint (ruff)
+        run: ruff check src tests examples
+
+      - name: Type-check (mypy)
+        run: mypy
+
+      - name: Test (pytest + coverage)
+        run: pytest --cov --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  security:
+    name: security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[web,notify]"
+          pip install bandit pip-audit
+
+      # Static analysis for insecure patterns. B101 (assert) is excluded for
+      # tests only; src is scanned with the default rule set.
+      - name: Static analysis (bandit)
+        run: bandit -r src -ll
+
+      # Known CVEs in the declared dependency set. Audited from requirements.txt
+      # rather than from the environment because the project itself is installed
+      # editable and is not published on PyPI -- which --strict would otherwise
+      # report as an un-auditable dependency and fail the job.
+      - name: Dependency audit (pip-audit)
+        run: pip-audit --strict --desc -r requirements.txt

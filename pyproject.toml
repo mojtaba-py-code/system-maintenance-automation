@@ -1,0 +1,120 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "system-maintenance-automation"
+version = "1.0.0"
+description = "Cross-platform, production-grade system maintenance automation toolkit (cleanup, backup, monitoring, reporting)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Mojtaba Karimi" }]
+keywords = [
+    "system-maintenance",
+    "automation",
+    "cleanup",
+    "backup",
+    "monitoring",
+    "devops",
+    "cross-platform",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "psutil>=5.9",
+    "pydantic>=2.5",
+    "PyYAML>=6.0",
+    "rich>=13.0",
+    "schedule>=1.2",
+]
+
+[project.optional-dependencies]
+web = ["fastapi>=0.110", "uvicorn>=0.27", "jinja2>=3.1"]
+notify = ["httpx>=0.27"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "mypy>=1.8",
+    "ruff>=0.3",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+maintenance = "maintenance.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mojtaba-py-code/system-maintenance-automation"
+Repository = "https://github.com/mojtaba-py-code/system-maintenance-automation"
+Issues = "https://github.com/mojtaba-py-code/system-maintenance-automation/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+maintenance = ["web/templates/*.html", "web/static/*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "integration: end-to-end tests spanning multiple modules",
+    "performance: timing/throughput sensitive tests",
+    "slow: tests that may take longer to run",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["maintenance"]
+omit = ["*/web/*", "*/notifications/*", "*/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "PTH", "RUF"]
+# SIM112: we intentionally use the conventional mixed-case Windows env var
+# names (SystemRoot / SystemDrive), which are case-insensitive on Windows.
+ignore = ["N818", "SIM112"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "SIM112", "RUF059", "E501"]
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = "src"
+packages = ["maintenance"]
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+strict_equality = true
+ignore_missing_imports = true

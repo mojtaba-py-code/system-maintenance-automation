@@ -1,0 +1,228 @@
+# =============================================================================
+# System Maintenance Automation — Example Configuration
+# -----------------------------------------------------------------------------
+# Copy this file to `config/config.yaml` and adjust to your environment.
+# `config/config.yaml` is git-ignored so your local paths stay private.
+#
+# All paths may use ~ (home) and environment variables (e.g. %TEMP%, $HOME).
+# Every value below has a safe default in code; you only need to override
+# what you care about.
+# =============================================================================
+
+# Application-wide settings.
+app:
+  # Logical environment name; appears in reports and logs.
+  environment: "production"
+  # Base directory for runtime output. Relative paths resolve against the
+  # project root. Absolute paths are used as-is.
+  data_dir: "."
+  # Require an interactive confirmation before any destructive action
+  # (deletion, recycle-bin empty). Overridable per-run with --force.
+  require_confirmation: true
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"                 # DEBUG | INFO | WARNING | ERROR | CRITICAL
+  console: true                 # Pretty console logging via rich.
+  directory: "logs"             # Relative to app.data_dir.
+  rotate_max_bytes: 5242880     # 5 MiB per file before rotation.
+  rotate_backup_count: 7        # Keep 7 rotated files.
+  date_stamped_files: true      # One log file per day (maintenance-YYYY-MM-DD.log).
+  audit_log: true               # Separate append-only audit trail for actions.
+
+# -----------------------------------------------------------------------------
+# Database (SQLite) — history & statistics
+# -----------------------------------------------------------------------------
+database:
+  path: "database/maintenance.db"   # Relative to app.data_dir.
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Security — the guardrails that protect your system from accidents
+# -----------------------------------------------------------------------------
+security:
+  # Absolute paths (or path prefixes) that may NEVER be cleaned, deleted, or
+  # written to. Sensible OS roots are always protected in code; these are
+  # ADDITIONAL user-defined protections.
+  protected_paths:
+    - "~/Documents"
+    - "~/Pictures"
+  # Only allow cleanup/scan operations whose targets resolve *inside* one of
+  # these roots. Empty list means "no allow-list restriction" (still subject
+  # to protected_paths and built-in OS protections).
+  allowed_roots: []
+  # Hard cap on how many files one run may remove. Once reached, cleanup stops
+  # and reports it rather than continuing — this is the circuit breaker for a
+  # misconfigured pattern that suddenly matches far more than intended.
+  max_delete_batch: 5000
+  # Follow symbolic links while scanning (False is the safe default).
+  follow_symlinks: false
+
+# -----------------------------------------------------------------------------
+# Cleanup
+# -----------------------------------------------------------------------------
+cleanup:
+  # Directories to scan for temporary/cache files.
+  temp_directories:
+    - "%TEMP%"          # Windows
+    - "/tmp"            # Linux/macOS
+    - "~/.cache"        # XDG cache
+  # Delete files older than this many days when running `clean --old-logs`.
+  log_max_age_days: 30
+  # Directories that hold rotated logs to prune.
+  log_directories: []
+  # File extensions considered "temporary" and safe to remove.
+  temp_extensions: [".tmp", ".temp", ".log.old", ".bak", ".dmp", ".~"]
+  # Never touch files matching these glob patterns.
+  exclude_patterns: ["*.important", "*.keep"]
+  # Never descend into directories with these names.
+  exclude_dirs: [".git", ".svn", "node_modules", "__pycache__", ".venv"]
+  # Empty the OS recycle bin / trash as part of `clean --all`.
+  empty_recycle_bin: false
+  # Remove directories that contain no files after cleanup.
+  remove_empty_dirs: true
+  # Move deleted files to a quarantine folder instead of unlinking them,
+  # so a mistaken deletion can be undone. Strongly recommended.
+  quarantine: true
+  quarantine_dir: "backups/quarantine"
+  # How long a quarantined file stays recoverable. Each run purges anything
+  # older than this. 0 means "no recovery window" — the next run clears it.
+  quarantine_retention_days: 7
+
+# -----------------------------------------------------------------------------
+# Backup
+# -----------------------------------------------------------------------------
+backup:
+  # Source directories to back up.
+  sources:
+    - "~/Documents/important"
+  # Destination for backup archives.
+  destination: "backups"
+  # Archive format: "zip" | "tar.gz" | "tar.bz2".
+  archive_format: "zip"
+  # zipfile / tarfile compression level (0-9 where applicable).
+  compression_level: 6
+  # Incremental backups only archive files changed since the last run
+  # (tracked via a SHA-256 manifest). Set false for always-full backups.
+  incremental: true
+  # Keep at most this many backup sets; older sets are rotated out.
+  keep_last: 10
+  # Verify every archive by re-hashing its contents after creation.
+  verify_after_backup: true
+  # Exclude patterns (glob) from backups.
+  exclude_patterns: ["*.tmp", "*.log", "*.pyc"]
+
+# -----------------------------------------------------------------------------
+# Monitoring & thresholds — drive the health score and alerts
+# -----------------------------------------------------------------------------
+monitor:
+  cpu_threshold: 85.0            # % — sustained usage above this is unhealthy.
+  memory_threshold: 90.0         # % of RAM used.
+  swap_threshold: 80.0           # % of swap used.
+  disk_threshold: 90.0           # % of any mounted volume used.
+  # Volumes/mountpoints to watch. Empty = all physical partitions.
+  watch_paths: []
+  # Sample window (seconds) for CPU percentage measurement.
+  cpu_sample_interval: 1.0
+  # Number of top processes (by CPU and by memory) to include in reports.
+  top_processes: 10
+
+# -----------------------------------------------------------------------------
+# Disk analysis
+# -----------------------------------------------------------------------------
+disk:
+  # Files at or above this size (bytes) are flagged as "large".
+  large_file_threshold: 104857600   # 100 MiB
+  # Files not modified in this many days are flagged as "old".
+  old_file_age_days: 365
+  # Maximum directory depth for usage-tree analysis (0 = unlimited).
+  max_depth: 6
+
+# -----------------------------------------------------------------------------
+# Reporting
+# -----------------------------------------------------------------------------
+report:
+  # Default output formats. Any of: json, csv, html, markdown.
+  formats: ["json", "html"]
+  directory: "reports"          # Relative to app.data_dir.
+  # Include full file lists in reports (can be large). False = summaries only.
+  include_file_lists: false
+
+# -----------------------------------------------------------------------------
+# Concurrency
+# -----------------------------------------------------------------------------
+performance:
+  # Worker threads for hashing / scanning. 0 = auto (os.cpu_count()).
+  threads: 0
+  # Per-operation timeout in seconds for external commands (updates, AV scan).
+  command_timeout: 120
+  # Retries for transient failures (network errors, HTTP 429/5xx when sending
+  # notifications). Backoff doubles each attempt. Permanent 4xx is not retried.
+  retry_attempts: 2
+  retry_backoff_seconds: 0.5
+
+# -----------------------------------------------------------------------------
+# Scheduler
+# -----------------------------------------------------------------------------
+scheduler:
+  enabled: false
+  jobs:
+    - name: "nightly-clean"
+      task: "clean"             # clean | backup | monitor | report | scan
+      interval: "daily"         # hourly | daily | weekly | monthly | "every N minutes"
+      at: "02:30"               # HH:MM for daily/weekly (optional).
+      args: { dry_run: false }
+    - name: "hourly-monitor"
+      task: "monitor"
+      interval: "hourly"
+      args: {}
+
+# -----------------------------------------------------------------------------
+# Notifications — all disabled by default.
+# SECURITY: never hard-code tokens here. Reference environment variables with
+# the `${ENV:VAR_NAME}` syntax; they are resolved at load time.
+# -----------------------------------------------------------------------------
+notifications:
+  enabled: false
+  # Only send a notification when the run's health score is at/below this,
+  # or when errors occurred. 100 = always notify.
+  notify_below_health: 70
+  telegram:
+    enabled: false
+    bot_token: "${ENV:TELEGRAM_BOT_TOKEN}"
+    chat_id: "${ENV:TELEGRAM_CHAT_ID}"
+  discord:
+    enabled: false
+    webhook_url: "${ENV:DISCORD_WEBHOOK_URL}"
+  slack:
+    enabled: false
+    webhook_url: "${ENV:SLACK_WEBHOOK_URL}"
+  email:
+    enabled: false
+    smtp_host: "${ENV:SMTP_HOST}"
+    smtp_port: 587
+    use_tls: true
+    username: "${ENV:SMTP_USERNAME}"
+    password: "${ENV:SMTP_PASSWORD}"
+    from_addr: "${ENV:SMTP_FROM}"
+    to_addrs: []
+
+# -----------------------------------------------------------------------------
+# Web dashboard / REST API
+# -----------------------------------------------------------------------------
+web:
+  host: "127.0.0.1"             # Bind to localhost only by default (secure).
+  port: 8787
+  # Bearer token protecting BOTH the JSON API and the HTML dashboard.
+  # Empty is only permitted while `host` is loopback — binding to any other
+  # address without a token is rejected at startup, not silently allowed.
+  # Minimum 32 characters. Generate one with:
+  #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+  api_token: "${ENV:MAINTENANCE_API_TOKEN}"
+  # Browser session lifetime after signing in at /login.
+  session_ttl_minutes: 60
+  # Brute-force guard: after this many bad tokens, that client is locked out.
+  max_failed_logins: 5
+  lockout_seconds: 300

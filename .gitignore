@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv*/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / coverage artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Runtime output directories (keep the folders, ignore contents)
+logs/*
+!logs/.gitkeep
+reports/*
+!reports/.gitkeep
+backups/*
+!backups/.gitkeep
+database/*
+!database/.gitkeep
+!database/schema.sql
+
+# Local configuration & secrets — NEVER commit real credentials
+config/config.yaml
+config/config.local.yaml
+config/*.local.*
+.env
+*.env
+secrets.*
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "run_id": "d3f9a17c4b02",
+    "command": "monitor",
+    "environment": "workstation",
+    "dry_run": false,
+    "generated_at": "2026-01-15T09:14:15+00:00",
+    "duration_s": 3.336,
+    "duration_human": "3s"
+  },
+  "system": {
+    "hostname": "demo-workstation",
+    "os_name": "Windows",
+    "os_release": "11",
+    "os_version": "10.0.22631",
+    "architecture": "AMD64",
+    "platform_summary": "Windows-11-10.0.22631-SP0",
+    "python_version": "3.12.0",
+    "cpu_physical_cores": 4,
+    "cpu_logical_cores": 8,
+    "total_memory_bytes": 17179869184,
+    "total_swap_bytes": 4294967296,
+    "boot_time": "2026-01-15T01:42:30+00:00",
+    "collected_at": "2026-01-15T09:14:15+00:00",
+    "extra": {}
+  },
+  "health": {
+    "score": 88,
+    "grade": "B",
+    "factors": [
+      "High memory (95%)"
+    ],
+    "suggestions": [
+      "Close unused applications or add RAM; check for leaks."
+    ]
+  },
+  "sections": {
+    "monitor": {
+      "timestamp": "2026-01-15T09:14:13+00:00",
+      "cpu_percent": 68.3,
+      "per_cpu_percent": [
+        62.4,
+        47.5,
+        65.6,
+        49.4,
+        71.2,
+        58.8,
+        74.1,
+        60.3
+      ],
+      "load_average": null,
+      "memory_percent": 94.8,
+      "memory_used": 16287141888,
+      "memory_total": 17179869184,
+      "swap_percent": 12.5,
+      "disks": [
+        {
+          "path": "C:\\",
+          "fstype": "NTFS",
+          "total": 512110190592,
+          "used": 268435456000,
+          "free": 243674734592,
+          "percent": 52.4
+        }
+      ],
+      "net_bytes_sent": 421215894,
+      "net_bytes_recv": 375439477,
+      "top_cpu_processes": [
+        {
+          "pid": 4312,
+          "name": "app-server.exe",
+          "cpu_percent": 84.8,
+          "memory_percent": 3.1,
+          "memory_rss": 532676608
+        },
+        {
+          "pid": 2288,
+          "name": "web-browser.exe",
+          "cpu_percent": 37.5,
+          "memory_percent": 4.54,
+          "memory_rss": 780140544
+        },
+        {
+          "pid": 6104,
+          "name": "code-editor.exe",
+          "cpu_percent": 20.0,
+          "memory_percent": 7.55,
+          "memory_rss": 1297612800
+        },
+        {
+          "pid": 3760,
+          "name": "database.exe",
+          "cpu_percent": 13.3,
+          "memory_percent": 9.82,
+          "memory_rss": 1687060480
+        },
+        {
+          "pid": 5496,
+          "name": "python.exe",
+          "cpu_percent": 8.4,
+          "memory_percent": 0.76,
+          "memory_rss": 130547712
+        },
+        {
+          "pid": 1180,
+          "name": "indexer.exe",
+          "cpu_percent": 4.1,
+          "memory_percent": 0.94,
+          "memory_rss": 161480704
+        },
+        {
+          "pid": 2044,
+          "name": "backup-agent.exe",
+          "cpu_percent": 2.4,
+          "memory_percent": 0.41,
+          "memory_rss": 70451200
+        },
+        {
+          "pid": 1520,
+          "name": "desktop-shell.exe",
+          "cpu_percent": 2.0,
+          "memory_percent": 0.28,
+          "memory_rss": 48103424
+        },
+        {
+          "pid": 3684,
+          "name": "antivirus.exe",
+          "cpu_percent": 1.7,
+          "memory_percent": 2.27,
+          "memory_rss": 389939200
+        },
+        {
+          "pid": 908,
+          "name": "log-collector.exe",
+          "cpu_percent": 0.9,
+          "memory_percent": 0.19,
+          "memory_rss": 32636928
+        }
+      ],
+      "top_memory_processes": [
+        {
+          "pid": 3760,
+          "name": "database.exe",
+          "cpu_percent": 13.3,
+          "memory_percent": 9.82,
+          "memory_rss": 1687060480
+        },
+        {
+          "pid": 6104,
+          "name": "code-editor.exe",
+          "cpu_percent": 20.0,
+          "memory_percent": 7.55,
+          "memory_rss": 1297612800
+        },
+        {
+          "pid": 2288,
+          "name": "web-browser.exe",
+          "cpu_percent": 37.5,
+          "memory_percent": 4.54,
+          "memory_rss": 780140544
+        },
+        {
+          "pid": 4312,
+          "name": "app-server.exe",
+          "cpu_percent": 84.8,
+          "memory_percent": 3.1,
+          "memory_rss": 532676608
+        },
+        {
+          "pid": 3684,
+          "name": "antivirus.exe",
+          "cpu_percent": 1.7,
+          "memory_percent": 2.27,
+          "memory_rss": 389939200
+        },
+        {
+          "pid": 1180,
+          "name": "indexer.exe",
+          "cpu_percent": 4.1,
+          "memory_percent": 0.94,
+          "memory_rss": 161480704
+        },
+        {
+          "pid": 5496,
+          "name": "python.exe",
+          "cpu_percent": 8.4,
+          "memory_percent": 0.76,
+          "memory_rss": 130547712
+        },
+        {
+          "pid": 2044,
+          "name": "backup-agent.exe",
+          "cpu_percent": 2.4,
+          "memory_percent": 0.41,
+          "memory_rss": 70451200
+        },
+        {
+          "pid": 1520,
+          "name": "desktop-shell.exe",
+          "cpu_percent": 2.0,
+          "memory_percent": 0.28,
+          "memory_rss": 48103424
+        },
+        {
+          "pid": 908,
+          "name": "log-collector.exe",
+          "cpu_percent": 0.9,
+          "memory_percent": 0.19,
+          "memory_rss": 32636928
+        }
+      ],
+      "alerts": [
+        "Memory usage 95% >= 90%"
+      ],
+      "memory_used_human": "15.17 GiB",
+      "memory_total_human": "16.00 GiB"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

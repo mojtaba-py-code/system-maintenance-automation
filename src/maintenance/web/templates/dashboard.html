@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maintenance Dashboard — {{ system.hostname }}</title>
+  <style nonce="{{ csp_nonce }}">
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+           background: #0d1117; color: #e6edf3; }
+    header { padding: 20px 28px; background: #161b22; border-bottom: 1px solid #30363d;
+             display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    header h1 { font-size: 18px; margin: 0; }
+    header .env { font-size: 12px; color: #8b949e; }
+    header .refresh { margin-left: auto; font-size: 12px; color: #8b949e; }
+    main { max-width: 1080px; margin: 24px auto; padding: 0 16px;
+           display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 18px 20px; }
+    .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em;
+               color: #8b949e; margin: 0 0 12px; }
+    .score { font-size: 46px; font-weight: 700; line-height: 1; }
+    .grade { font-size: 14px; color: #8b949e; margin-left: 6px; }
+    .metric { display: flex; justify-content: space-between; padding: 6px 0;
+              border-bottom: 1px solid #21262d; font-size: 14px; }
+    .metric:last-child { border-bottom: none; }
+    .bar { height: 8px; border-radius: 4px; background: #21262d; overflow: hidden; margin-top: 4px; }
+    .bar > span { display: block; height: 100%; }
+    .good { background: #1f6feb; } .warn { background: #d29922; } .bad { background: #da3633; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #21262d; }
+    th { color: #8b949e; font-weight: 600; }
+    .full { grid-column: 1 / -1; }
+    ul { margin: 8px 0 0; padding-left: 18px; } li { margin: 4px 0; font-size: 13px; }
+    .alert { color: #f85149; } .ok { color: #3fb950; }
+    code { color: #79c0ff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛠 System Maintenance</h1>
+    <span class="env">{{ system.hostname }} · {{ system.os_name }} {{ system.os_release }} · {{ environment }}</span>
+    <span class="refresh">auto-refresh 15s{% if auth_required %} ·
+      <form method="post" action="/logout" style="display:inline"><button type="submit"
+        style="background:none;border:0;color:#8b949e;cursor:pointer;font:inherit;padding:0;text-decoration:underline">
+        sign out</button></form>{% endif %}</span>
+  </header>
+  <main>
+    {% set colour = 'good' if health.score >= 80 else ('warn' if health.score >= 60 else 'bad') %}
+    <div class="card">
+      <h2>Health Score</h2>
+      <div><span class="score" style="color: {{ '#3fb950' if health.score>=80 else '#d29922' if health.score>=60 else '#f85149' }}">{{ health.score }}</span><span class="grade">/100 · {{ health.grade }}</span></div>
+      {% if health.factors %}<ul>{% for f in health.factors %}<li class="alert">{{ f }}</li>{% endfor %}</ul>
+      {% else %}<p class="ok">All systems nominal.</p>{% endif %}
+    </div>
+
+    <div class="card">
+      <h2>Resources</h2>
+      <div class="metric"><span>CPU</span><span>{{ '%.1f'|format(snapshot.cpu_percent) }}%</span></div>
+      <div class="bar"><span class="{{ colour }}" style="width: {{ snapshot.cpu_percent }}%"></span></div>
+      <div class="metric" style="margin-top:10px"><span>Memory</span><span>{{ '%.1f'|format(snapshot.memory_percent) }}%</span></div>
+      <div class="bar"><span class="{{ colour }}" style="width: {{ snapshot.memory_percent }}%"></span></div>
+      <div class="metric" style="margin-top:10px"><span>Swap</span><span>{{ '%.1f'|format(snapshot.swap_percent) }}%</span></div>
+      <div class="bar"><span class="{{ colour }}" style="width: {{ snapshot.swap_percent }}%"></span></div>
+    </div>
+
+    <div class="card">
+      <h2>History</h2>
+      <div class="metric"><span>Total runs</span><span>{{ summary.total_runs }}</span></div>
+      <div class="metric"><span>Backups</span><span>{{ summary.total_backups }}</span></div>
+      <div class="metric"><span>Errors logged</span><span>{{ summary.total_errors }}</span></div>
+      <div class="metric"><span>Avg health</span><span>{{ summary.avg_health_score if summary.avg_health_score is not none else 'n/a' }}</span></div>
+    </div>
+
+    <div class="card full">
+      <h2>Disks</h2>
+      <table>
+        <tr><th>Mount</th><th>Type</th><th>Used %</th><th>Free</th></tr>
+        {% for d in snapshot.disks %}
+        <tr><td><code>{{ d.path }}</code></td><td>{{ d.fstype }}</td>
+            <td>{{ '%.0f'|format(d.percent) }}%</td><td>{{ (d.free // (1024*1024)) }} MiB</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="card full">
+      <h2>Top Processes (CPU)</h2>
+      <table>
+        <tr><th>PID</th><th>Name</th><th>CPU %</th><th>Mem %</th></tr>
+        {% for p in snapshot.top_cpu_processes[:8] %}
+        <tr><td>{{ p.pid }}</td><td>{{ p.name }}</td><td>{{ '%.1f'|format(p.cpu_percent) }}</td><td>{{ '%.1f'|format(p.memory_percent) }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="card full">
+      <h2>Recent Runs</h2>
+      <table>
+        <tr><th>Run</th><th>Command</th><th>Started</th><th>Status</th><th>Health</th></tr>
+        {% for r in recent %}
+        <tr><td><code>{{ r.run_id }}</code></td><td>{{ r.command }}</td><td>{{ r.started_at }}</td>
+            <td class="{{ 'ok' if r.status == 'ok' else 'alert' }}">{{ r.status }}</td>
+            <td>{{ r.health_score if r.health_score is not none else '-' }}</td></tr>
+        {% else %}
+        <tr><td colspan="5">No runs recorded yet.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </main>
+  <script nonce="{{ csp_nonce }}">setTimeout(() => location.reload(), 15000);</script>
+</body>
+</html>

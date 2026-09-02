@@ -1,0 +1,7 @@
+2026-01-15 09:12:30 | AUDIT | quarantine path=C:\Users\demo\maintenance-demo\cache\render1.tmp size=13 reason=temp
+2026-01-15 09:12:30 | AUDIT | quarantine path=C:\Users\demo\maintenance-demo\cache\session.bak size=2 reason=temp
+2026-01-15 09:12:30 | AUDIT | quarantine path=C:\Users\demo\maintenance-demo\cache\thumbnails\t1.tmp size=4 reason=temp
+2026-01-15 09:12:30 | AUDIT | quarantine path=C:\Users\demo\maintenance-demo\cache\thumbnails\t2.tmp size=4 reason=temp
+2026-01-15 09:12:30 | AUDIT | rmdir path=C:\Users\demo\maintenance-demo\cache\thumbnails
+2026-01-15 09:12:37 | AUDIT | empty-recycle-bin
+2026-01-15 09:12:38 | AUDIT | backup source=C:\Users\demo\maintenance-demo\Documents archive=C:\Users\demo\maintenance-demo\backups\Documents_20260115T091238Z.zip files=2

@@ -1,0 +1,2 @@
+# Static assets for the web dashboard are served from this directory.
+# The dashboard template is self-contained, so no assets are required by default.
