@@ -156,6 +156,38 @@ def test_clean_preview_is_dry_run(settings: Settings, junk_dir: Path) -> None:
     assert (junk_dir / "a.tmp").exists()
 
 
+def test_clean_preview_does_not_return_host_paths(
+    settings: Settings, junk_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed removal names the file; the HTTP caller must not be told which.
+
+    CleanupResult.errors is written for the console, where the operator is
+    looking at their own filesystem. Returned over HTTP it maps the host for
+    whoever holds the token, which is the same disclosure to_dict already
+    avoids by withholding `actions`.
+    """
+    from maintenance.cleanup import CleanupEngine, CleanupResult
+
+    secret_path = "/srv/private/customer-archive/2026-invoices.tar.gz"
+
+    def fake_run(self: CleanupEngine, **_kwargs: object) -> CleanupResult:
+        return CleanupResult(
+            dry_run=True,
+            errors=[f"Failed to delete {secret_path}: [Errno 13] Permission denied"],
+        )
+
+    monkeypatch.setattr(CleanupEngine, "run", fake_run)
+
+    resp = _client(settings).post("/api/clean/preview")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["error_count"] == 1, "the caller still learns that something failed"
+    assert "errors" not in body
+    assert secret_path not in resp.text
+    assert "Permission denied" not in resp.text
+
+
 def test_run_server_rejects_an_unauthenticated_network_bind(settings: Settings) -> None:
     from maintenance.web.server import run_server
 

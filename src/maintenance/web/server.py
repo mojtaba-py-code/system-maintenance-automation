@@ -403,7 +403,16 @@ def create_app(settings: Settings) -> FastAPI:
             guard=guard,
             dry_run=True,
         )
-        return engine.run(temp=True, duplicates=True, empty_dirs=True).to_dict()
+        payload = engine.run(temp=True, duplicates=True, empty_dirs=True).to_dict()
+        # The error strings name the file that could not be removed, and the
+        # OSError text repeats the absolute path. That is the right thing to
+        # show the operator at the console, and the wrong thing to hand back
+        # over HTTP: it maps the host's filesystem for whoever holds the token.
+        # to_dict already withholds `actions` for the same reason; the paths
+        # were escaping through `errors` instead. The detail stays in the
+        # server log, where the operator reads it.
+        payload["error_count"] = len(payload.pop("errors"))
+        return payload
 
     @app.get("/api/ping")
     def ping() -> dict[str, str]:

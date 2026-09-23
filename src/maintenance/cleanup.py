@@ -219,7 +219,9 @@ class CleanupEngine:
                 result.actions.append({"action": "purge-quarantine", "path": str(entry)})
                 audit("purge-quarantine", path=str(entry), age_days=round(age, 1))
             except OSError as exc:
-                result.errors.append(f"Failed to purge quarantined {entry}: {exc}")
+                msg = f"Failed to purge quarantined {entry}: {exc}"
+                result.errors.append(msg)
+                logger.warning(msg)
         if result.quarantine_purged:
             logger.info(
                 "Quarantine purge: %d entr%s older than %d day(s) removed",
@@ -357,7 +359,9 @@ class CleanupEngine:
                     result.actions.append({"action": "rmdir", "path": str(directory)})
                     audit("rmdir", path=str(directory))
                 except OSError as exc:
-                    result.errors.append(f"Failed to remove empty dir {directory}: {exc}")
+                    msg = f"Failed to remove empty dir {directory}: {exc}"
+                    result.errors.append(msg)
+                    logger.warning(msg)
         logger.info("Empty-dir cleanup: %d directories removed", result.empty_dirs_removed)
         return result
 
@@ -399,7 +403,9 @@ class CleanupEngine:
             result.actions.append({"action": "empty-recycle-bin"})
             audit("empty-recycle-bin")
         except (OSError, subprocess.SubprocessError) as exc:
-            result.errors.append(f"Failed to empty recycle bin: {exc}")
+            msg = f"Failed to empty recycle bin: {exc}"
+            result.errors.append(msg)
+            logger.warning(msg)
         return result
 
     def run(
