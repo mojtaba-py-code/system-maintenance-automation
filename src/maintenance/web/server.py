@@ -403,16 +403,30 @@ def create_app(settings: Settings) -> FastAPI:
             guard=guard,
             dry_run=True,
         )
-        payload = engine.run(temp=True, duplicates=True, empty_dirs=True).to_dict()
-        # The error strings name the file that could not be removed, and the
-        # OSError text repeats the absolute path. That is the right thing to
-        # show the operator at the console, and the wrong thing to hand back
-        # over HTTP: it maps the host's filesystem for whoever holds the token.
-        # to_dict already withholds `actions` for the same reason; the paths
-        # were escaping through `errors` instead. The detail stays in the
-        # server log, where the operator reads it.
-        payload["error_count"] = len(payload.pop("errors"))
-        return payload
+        result = engine.run(temp=True, duplicates=True, empty_dirs=True)
+        # Built field by field rather than returned whole. CleanupResult.errors
+        # names the file each failure happened on, and the OSError text repeats
+        # the absolute path — which is what the operator needs at the console
+        # and precisely what should not travel over HTTP, where it maps the
+        # host's filesystem for whoever holds the token. to_dict already
+        # withholds `actions` for that reason; the paths were leaving through
+        # `errors` instead, and the detail now stays in the server log.
+        #
+        # An allow-list rather than a pop, so a field added to to_dict later
+        # has to be named here before it can reach a caller.
+        counts = result.to_dict()
+        return {
+            "dry_run": counts["dry_run"],
+            "files_deleted": counts["files_deleted"],
+            "bytes_reclaimed": counts["bytes_reclaimed"],
+            "bytes_reclaimed_human": counts["bytes_reclaimed_human"],
+            "duplicates_removed": counts["duplicates_removed"],
+            "empty_dirs_removed": counts["empty_dirs_removed"],
+            "skipped": counts["skipped"],
+            "quarantine_purged": counts["quarantine_purged"],
+            "batch_limit_reached": counts["batch_limit_reached"],
+            "error_count": len(result.errors),
+        }
 
     @app.get("/api/ping")
     def ping() -> dict[str, str]:
